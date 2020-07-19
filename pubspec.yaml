@@ -27,7 +27,9 @@ dependencies:
   http:
   charts_flutter:
   google_maps_flutter:
+  flutter_polyline_points:
   url_launcher:
+  youtube_player_flutter:
 
 
 dev_dependencies:

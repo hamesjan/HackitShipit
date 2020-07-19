@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 
 class MapPage extends StatefulWidget {
   @override
@@ -9,11 +10,8 @@ class MapPage extends StatefulWidget {
 
 class MapPageState extends State<MapPage> {
   Completer<GoogleMapController> _controller = Completer();
-
-  @override
-  void initState() {
-    super.initState();
-  }
+  Map<PolylineId, Polyline> _mapPolylines = {};
+  int _polylineIdCounter = 1;
 
   double zoomVal=5.0;
   @override
@@ -70,33 +68,12 @@ class MapPageState extends State<MapPage> {
         margin: EdgeInsets.symmetric(vertical: 20.0),
         height: 150.0,
         child:
-        ListView(
-          scrollDirection: Axis.horizontal,
-          children: <Widget>[
-            SizedBox(width: 10.0),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: _boxes(
                   "https://www.traderjoes.com/Brandify/images/121-Torrance-Hawthorne-Blvd-storefront.jpg",
-                  33.85226, -118.353,"Trader Joes", "Estimated Wait: 0 minutes"),
+                  33.8393, -118.3627,"On the Way!", "Estimated Arrival: 7 minutes"),
             ),
-            SizedBox(width: 10.0),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: _boxes(
-                  "https://mobilecontent.costco.com/live/resource/img/static-roadshow/special-events-schedule.jpg",
-                  33.8065, -118.33337, "Costco", "Estimated Wait: 5 minutes"),
-            ),
-            SizedBox(width: 10.0),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: _boxes(
-                  "https://www.hyperborea.org/journal/wp-content/uploads/2011/12/shop-s-mart.jpg",
-                  33.83722, -118.329367,"S-Mart", "Estimated Wait: 2 minutes"),
-            ),
-          ],
-        ),
-
       ),
     );
   }
@@ -123,7 +100,9 @@ class MapPageState extends State<MapPage> {
                       borderRadius: new BorderRadius.circular(24.0),
                       child: Image(
                         fit: BoxFit.fill,
-                        image: NetworkImage(_image),
+                        image: AssetImage(
+                          'assets/images/location.png'
+                        ),
                       ),
                     ),),
                   Container(
@@ -164,74 +143,35 @@ class MapPageState extends State<MapPage> {
           ),
         ),
         SizedBox(height:5.0),
-        Container(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Container(
-                    child: Text(
-                      "3.7",
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 18.0,
-                      ),
-                    )),
-                Container(
-                  child: Icon(
-                    Icons.star,
-                    color: Colors.amber,
-                    size: 15.0,
-                  ),
-                ),
-                Container(
-                  child: Icon(
-                    Icons.star,
-                    color: Colors.amber,
-                    size: 15.0,
-                  ),
-                ),
-                Container(
-                  child: Icon(
-                    Icons.star,
-                    color: Colors.amber,
-                    size: 15.0,
-                  ),
-                ),
-                Container(
-                  child: Icon(
-                    Icons.star_half,
-                    color: Colors.amber,
-                    size: 15.0,
-                  ),
-                ),
-                Container(
-                  child: Icon(
-                    Icons.star_border,
-                    color: Colors.amber,
-                    size: 15.0,
-                  ),
-                ),
-                Container(
-                    child: Text(
-                      "(359)",
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 18.0,
-                      ),
-                    )),
-              ],
-            )),
-        SizedBox(height:5.0),
-        Container(
-            child: Text(
-              "Open \u00B7 8:00 A.M. - 9:00 P.M.",
-              style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 18.0,
-                  fontWeight: FontWeight.bold),
-            )),
       ],
     );
+  }
+
+  List<LatLng> _createPoints() {
+    final List<LatLng> points = <LatLng>[];
+    points.add(LatLng(33.85226, -118.353));
+    points.add(LatLng(33.8393, -118.3627));
+    points.add(LatLng(33.83722, -118.329367));
+    points.add(LatLng(33.8065, -118.33337));
+    return points;
+  }
+
+  void _add() {
+    final String polylineIdVal = 'polyline_id_$_polylineIdCounter';
+    _polylineIdCounter++;
+    final PolylineId polylineId = PolylineId(polylineIdVal);
+
+    final Polyline polyline = Polyline(
+      polylineId: polylineId,
+      consumeTapEvents: true,
+      color: Colors.red,
+      width: 5,
+      points: _createPoints(),
+    );
+
+    setState(() {
+      _mapPolylines[polylineId] = polyline;
+    });
   }
 
   Widget buildMap(BuildContext context) {
@@ -241,11 +181,14 @@ class MapPageState extends State<MapPage> {
       child: GoogleMap(
         mapType: MapType.normal,
         initialCameraPosition:  CameraPosition(target: LatLng(33.8358, -118.3406), zoom: 12),
+        polylines: Set<Polyline>.of(_mapPolylines.values),
+
         onMapCreated: (GoogleMapController controller) {
           _controller.complete(controller);
+          _add();
         },
         markers: {
-          walmart,smart,traderJoes,costco,cvs
+          traderJoes,costco,cvs
         },
       ),
     );
@@ -269,11 +212,10 @@ Marker traderJoes = Marker(
 
 Marker costco = Marker(
   markerId: MarkerId('Costco'),
-  position: LatLng(33.8065, -118.33337),
+  position:
+  LatLng(33.8065, -118.33337),
   infoWindow: InfoWindow(title: 'Costco'),
-  icon: BitmapDescriptor.defaultMarkerWithHue(
-    BitmapDescriptor.hueBlue,
-  ),
+  icon: BitmapDescriptor.defaultMarker,
 );
 
 Marker cvs = Marker(
@@ -287,20 +229,4 @@ Marker cvs = Marker(
 
 //New York Marker
 
-Marker walmart = Marker(
-  markerId: MarkerId('walmart'),
-  position: LatLng(33.827957, -118.35346),
-  infoWindow: InfoWindow(title: 'Walmart'),
-  icon: BitmapDescriptor.defaultMarkerWithHue(
-    BitmapDescriptor.hueBlue,
-  ),
-);
 
-Marker smart = Marker(
-  markerId: MarkerId('smart'),
-  position: LatLng(33.83722, -118.329367),
-  infoWindow: InfoWindow(title: 'S-Mart'),
-  icon: BitmapDescriptor.defaultMarkerWithHue(
-    BitmapDescriptor.hueBlue,
-  ),
-);

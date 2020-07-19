@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:hisi/pages/map_page.dart';
 import 'package:hisi/pages/graphs.dart';
 import 'package:hisi/pages/contact.dart';
+import 'package:hisi/pages/test_map.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class Home extends StatefulWidget {
   @override
@@ -11,6 +13,9 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin{
   TabController _tabController;
+
+  String videoURL = "https://youtu.be/YTYL4k4Kyik";
+  YoutubePlayerController _controller;
 
   @override
   void dispose() {
@@ -21,6 +26,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin{
   @override
   void initState() {
     super.initState();
+    _controller = YoutubePlayerController(
+      initialVideoId: YoutubePlayer.convertUrlToId(videoURL),
+    );
     _tabController = TabController(vsync: this, length: 3);
   }
 
@@ -47,7 +55,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin{
           controller: _tabController,
           children: <Widget>[
             MapPage(),
-            Graphs(),
+            Graphs(controller: _controller,),
             Contact(),
           ],
         ),
